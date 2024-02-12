@@ -19,5 +19,5 @@ VALUES ('Jane', 'Doe', 1, NULL),
     ('John', 'Smith', 3, 1),
     ('Sunny', 'Star', 2, 3),
     ('Mike', 'Jones', 4, 2),
-    ('Bob', 'Smith', 5, 4);3
+    ('Bob', 'Smith', 5, 4)
     

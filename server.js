@@ -93,6 +93,46 @@ function startApp() {
               );
             });
           break;
+        case "Add an employee":
+          inquirer
+            .prompt([
+              {
+                type: "input",
+                name: "employeeFirstName",
+                message: "What is the employee's first name?",
+              },
+              {
+                type: "input",
+                name: "employeeLastName",
+                message: "What is the employee's last name?",
+              },
+              {
+                type: "input",
+                name: "employeeRoleId",
+                message: "What is the employee's role ID?",
+              },
+              {
+                type: "input",
+                name: "employeeManagerId",
+                message: "What is the employee's manager ID?",
+              },
+            ])
+            .then((data) => {
+              const sql =
+                "INSERT INTO employees (first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?)";
+              const params = [
+                data.employeeFirstName,
+                data.employeeLastName,
+                data.employeeRoleId,
+                data.employeeManagerId,
+              ];
+
+              queryDB(sql, params);
+            })
+            .catch((error) => {
+              console.error("Error during employee creation:", error);
+            });
+          break;
         case "View all employees":
           inquirer
             .prompt([
@@ -105,10 +145,10 @@ function startApp() {
             ])
             .then((filterAnswers) => {
               switch (filterAnswers.filterOption) {
-                case "View all employees": //allows user to select all employees to view
+                case "View all employees":
                   queryDB("SELECT * FROM employees");
                   break;
-                case "Filter by manager": //allows user to filter by the manager ID for employee search
+                case "Filter by manager":
                   inquirer
                     .prompt([
                       {
@@ -121,43 +161,6 @@ function startApp() {
                       queryDB("SELECT * FROM employees WHERE manager_id = ?", [
                         data.managerFilter,
                       ]);
-                    });
-                  break;
-                case "Add an employee":
-                  inquirer
-                    .prompt([
-                      {
-                        type: "input",
-                        name: "employeeFirstName",
-                        message: "What is the employee's first name?",
-                      },
-                      {
-                        type: "input",
-                        name: "employeeLastName",
-                        message: "What is the employee's last name?",
-                      },
-                      {
-                        type: "input",
-                        name: "employeeRole",
-                        message: "What is the employee's role?",
-                      },
-                      {
-                        type: "input",
-                        name: "employeeManagerId",
-                        message: "What is the employee's manager id?",
-                      },
-                    ])
-                    .then((data) => {
-                      //places the data into the employees table
-                      queryDB(
-                        "INSERT INTO employees (first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?)",
-                        [
-                          data.employeeFirstName,
-                          data.employeeLastName,
-                          data.employeeRole,
-                          data.employeeManagerId,
-                        ]
-                      );
                     });
                   break;
               }
