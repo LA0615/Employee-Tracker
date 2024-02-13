@@ -67,10 +67,7 @@ function startApp() {
               ]);
             });
           break;
-        case "View all roles":
-          queryDB("SELECT * FROM roles");
-          break;
-        // Inside the "Add a role" section
+
         case "Add a role":
           // Fetch the list of departments from the database
           queryDB("SELECT id, name FROM departments")
@@ -107,45 +104,68 @@ function startApp() {
             .catch((error) => {
               console.error("Error during role creation:", error);
             });
+break;
+        case "View all roles":
+          queryDB("SELECT * FROM roles");
           break;
 
         case "Add an employee":
-          inquirer
-            .prompt([
-              {
-                type: "input",
-                name: "employeeFirstName",
-                message: "What is the employee's first name?",
-              },
-              {
-                type: "input",
-                name: "employeeLastName",
-                message: "What is the employee's last name?",
-              },
-              {
-                type: "input",
-                name: "employeeRole",
-                message: "What is the employee's role?",
-              },
-              {
-                type: "input",
-                name: "employeeManagerId",
-                message: "What is the employee's manager id?",
-              },
-            ])
-            .then((data) => {
-              //places the data into the employees table
-              queryDB(
-                "INSERT INTO employees (first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?)",
-                [
-                  data.employeeFirstName,
-                  data.employeeLastName,
-                  data.employeeRole,
-                  data.employeeManagerId,
-                ]
-              );
+          // Fetch the list of roles from the database
+          queryDB("SELECT id, title FROM roles").then((roleChoices) => {
+            // Fetch the list of managers from the database
+            queryDB(
+              "SELECT id, CONCAT(first_name, ' ', last_name) AS name FROM employees"
+            ).then((managerChoices) => {
+              inquirer
+                .prompt([
+                  {
+                    type: "input",
+                    name: "employeeFirstName",
+                    message: "What is the employee's first name?",
+                  },
+                  {
+                    type: "input",
+                    name: "employeeLastName",
+                    message: "What is the employee's last name?",
+                  },
+                  {
+                    type: "list",
+                    name: "employeeRoleId",
+                    message: "Choose the employee's role:",
+                    choices: roleChoices.map((role) => ({
+                      name: role.title,
+                      value: role.id,
+                    })),
+                  },
+                  {
+                    type: "list",
+                    name: "employeeManagerId",
+                    message: "Please choose the employee's manager:",
+                    choices: managerChoices.map((manager) => ({
+                      name: manager.name,
+                      value: manager.id,
+                    })),
+                  },
+                ])
+                .then((data) => {
+                  const sql =
+                    "INSERT INTO employees (first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?)";
+                  const params = [
+                    data.employeeFirstName,
+                    data.employeeLastName,
+                    data.employeeRoleId,
+                    data.employeeManagerId,
+                  ];
+
+                  queryDB(sql, params);
+                })
+                .catch((error) => {
+                  console.error("Error during employee creation:", error);
+                });
             });
+          });
           break;
+
         case "View all employees":
           inquirer
             .prompt([
@@ -178,42 +198,6 @@ function startApp() {
                   break;
               }
             });
-          break;
-        case "Add a role":
-          // Fetch the list of departments from the database
-          queryDB("SELECT id, name FROM departments").then(
-            (departmentChoices) => {
-              inquirer
-                .prompt([
-                  {
-                    type: "input",
-                    name: "roleTitle",
-                    message: "What is the title of the role?",
-                  },
-                  {
-                    type: "input",
-                    name: "roleSalary",
-                    message: "What is the salary for this role?",
-                  },
-                  {
-                    type: "list",
-                    name: "roleDepartmentID",
-                    message: "Choose the department for this role:",
-                    choices: departmentChoices.map((department) => ({
-                      name: department.name,
-                      value: department.id,
-                    })),
-                  },
-                ])
-
-                .then((data) => {
-                  queryDB(
-                    "INSERT INTO roles (title, salary, department_id) VALUES (?, ?, ?)",
-                    [data.roleTitle, data.roleSalary, data.roleDepartmentId]
-                  );
-                });
-            }
-          );
           break;
       }
     });
