@@ -166,39 +166,50 @@ break;
           });
           break;
 
-        case "View all employees":
-          inquirer
-            .prompt([
-              {
-                type: "list",
-                name: "filterOption",
-                message: "How would you like to filter employees?",
-                choices: ["View all employees", "Filter by manager"],
-              },
-            ])
-            .then((filterAnswers) => {
-              switch (filterAnswers.filterOption) {
-                case "View all employees":
-                  queryDB("SELECT * FROM employees");
-                  break;
-                case "Filter by manager":
-                  inquirer
-                    .prompt([
-                      {
-                        type: "input",
-                        name: "managerFilter",
-                        message: "Enter the manager's ID:",
-                      },
-                    ])
-                    .then((data) => {
-                      queryDB("SELECT * FROM employees WHERE manager_id = ?", [
-                        data.managerFilter,
-                      ]);
+          case "View all employees":
+            inquirer
+              .prompt([
+                {
+                  type: "list",
+                  name: "filterOption",
+                  message: "How would you like to filter employees?",
+                  choices: ["View all employees", "Filter by manager"],
+                },
+              ])
+              .then((filterAnswers) => {
+                switch (filterAnswers.filterOption) {
+                  case "View all employees":
+                    queryDB("SELECT * FROM employees");
+                    break;
+                  case "Filter by manager":
+                    // Fetch the list of managers from the database
+                    queryDB(
+                      "SELECT id, CONCAT(first_name, ' ', last_name) AS name FROM employees"
+                    ).then((managerChoices) => {
+                      inquirer
+                        .prompt([
+                          {
+                            type: "list",
+                            name: "managerFilter",
+                            message: "Choose the manager:",
+                            choices: managerChoices.map((manager) => ({
+                              name: manager.name,
+                              value: manager.name, 
+                            })),
+                          },
+                        ])
+                        .then((data) => {
+                          // Use the selected manager's name to filter employees
+                          queryDB("SELECT * FROM employees WHERE CONCAT(first_name, ' ', last_name) = ?", [
+                            data.managerFilter,
+                          ]);
+                        });
                     });
-                  break;
-              }
-            });
-          break;
+                    break;
+                }
+              });
+            break;
+          case "Update an employee role": 
       }
     });
 }
