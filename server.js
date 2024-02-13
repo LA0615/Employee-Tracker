@@ -12,13 +12,16 @@ const db = mysql.createConnection({
 
 // Define queryDB function
 const queryDB = (sql, params = []) => {
-  db.query(sql, params, (err, results) => {
-    if (err) {
-      console.error("Error executing query:", err);
-    } else {
-      console.table(results);
-      startApp();
-    }
+  return new Promise((resolve, reject) => {
+    db.query(sql, params, (err, results) => {
+      if (err) {
+        console.error("Error executing query:", err);
+        reject(err);
+      } else {
+        console.table(results);
+        resolve(results);
+      }
+    });
   });
 };
 
@@ -67,32 +70,45 @@ function startApp() {
         case "View all roles":
           queryDB("SELECT * FROM roles");
           break;
+        // Inside the "Add a role" section
         case "Add a role":
-          inquirer
-            .prompt([
-              {
-                type: "input",
-                name: "roleTitle",
-                message: "What is the title of the role?",
-              },
-              {
-                type: "input",
-                name: "roleSalary",
-                message: "What is the salary for this role?",
-              },
-              {
-                type: "input",
-                name: "roleDepartmentId",
-                message: "What is the department ID for this role?",
-              },
-            ])
-            .then((data) => {
-              queryDB(
-                "INSERT INTO roles (title, salary, department_id) VALUES (?, ?, ?)",
-                [data.roleTitle, data.roleSalary, data.roleDepartmentId]
-              );
+          // Fetch the list of departments from the database
+          queryDB("SELECT id, name FROM departments")
+            .then((departmentChoices) => {
+              inquirer
+                .prompt([
+                  {
+                    type: "input",
+                    name: "roleTitle",
+                    message: "What is the title of the role?",
+                  },
+                  {
+                    type: "input",
+                    name: "roleSalary",
+                    message: "What is the salary for this role?",
+                  },
+                  {
+                    type: "list",
+                    name: "roleDepartment",
+                    message: "Please choose a department for this role:",
+                    choices: departmentChoices.map((department) => ({
+                      name: department.name,
+                      value: department.id,
+                    })),
+                  },
+                ])
+                .then((data) => {
+                  queryDB(
+                    "INSERT INTO roles (title, salary, department_id) VALUES (?, ?, ?)",
+                    [data.roleTitle, data.roleSalary, data.roleDepartment]
+                  );
+                });
+            })
+            .catch((error) => {
+              console.error("Error during role creation:", error);
             });
           break;
+
         case "Add an employee":
           inquirer
             .prompt([
@@ -108,29 +124,26 @@ function startApp() {
               },
               {
                 type: "input",
-                name: "employeeRoleId",
-                message: "What is the employee's role ID?",
+                name: "employeeRole",
+                message: "What is the employee's role?",
               },
               {
                 type: "input",
                 name: "employeeManagerId",
-                message: "What is the employee's manager ID?",
+                message: "What is the employee's manager id?",
               },
             ])
             .then((data) => {
-              const sql =
-                "INSERT INTO employees (first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?)";
-              const params = [
-                data.employeeFirstName,
-                data.employeeLastName,
-                data.employeeRoleId,
-                data.employeeManagerId,
-              ];
-
-              queryDB(sql, params);
-            })
-            .catch((error) => {
-              console.error("Error during employee creation:", error);
+              //places the data into the employees table
+              queryDB(
+                "INSERT INTO employees (first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?)",
+                [
+                  data.employeeFirstName,
+                  data.employeeLastName,
+                  data.employeeRole,
+                  data.employeeManagerId,
+                ]
+              );
             });
           break;
         case "View all employees":
@@ -166,10 +179,47 @@ function startApp() {
               }
             });
           break;
+        case "Add a role":
+          // Fetch the list of departments from the database
+          queryDB("SELECT id, name FROM departments").then(
+            (departmentChoices) => {
+              inquirer
+                .prompt([
+                  {
+                    type: "input",
+                    name: "roleTitle",
+                    message: "What is the title of the role?",
+                  },
+                  {
+                    type: "input",
+                    name: "roleSalary",
+                    message: "What is the salary for this role?",
+                  },
+                  {
+                    type: "list",
+                    name: "roleDepartmentID",
+                    message: "Choose the department for this role:",
+                    choices: departmentChoices.map((department) => ({
+                      name: department.name,
+                      value: department.id,
+                    })),
+                  },
+                ])
+
+                .then((data) => {
+                  queryDB(
+                    "INSERT INTO roles (title, salary, department_id) VALUES (?, ?, ?)",
+                    [data.roleTitle, data.roleSalary, data.roleDepartmentId]
+                  );
+                });
+            }
+          );
+          break;
       }
     });
 }
 
+// Connect to the database and start the application
 db.connect((err) => {
   if (err) {
     console.error("Error connecting to MySQL:", err);
