@@ -55,10 +55,14 @@ async function startApp() {
             message: "What is the name of the department?",
           },
         ]);
-        await queryDB("INSERT INTO departments (name) VALUES (?)", [data.departmentName]);
+        await queryDB("INSERT INTO departments (name) VALUES (?)", [
+          data.departmentName,
+        ]);
         break;
       case "Add a role":
-        const departmentChoices = await queryDB("SELECT id, name FROM departments");
+        const departmentChoices = await queryDB(
+          "SELECT id, name FROM departments"
+        );
         const roleData = await inquirer.prompt([
           {
             type: "input",
@@ -80,18 +84,19 @@ async function startApp() {
             })),
           },
         ]);
-        await queryDB("INSERT INTO roles (title, salary, department_id) VALUES (?, ?, ?)", [
-          roleData.roleTitle,
-          roleData.roleSalary,
-          roleData.roleDepartment,
-        ]);
+        await queryDB(
+          "INSERT INTO roles (title, salary, department_id) VALUES (?, ?, ?)",
+          [roleData.roleTitle, roleData.roleSalary, roleData.roleDepartment]
+        );
         break;
       case "View all roles":
         await queryDB("SELECT * FROM roles");
         break;
       case "Add an employee":
         const roleChoices = await queryDB("SELECT id, title FROM roles");
-        const managerChoices = await queryDB("SELECT id, CONCAT(first_name, ' ', last_name) AS name FROM employees");
+        const managerChoices = await queryDB(
+          "SELECT id, CONCAT(first_name, ' ', last_name) AS name FROM employees"
+        );
         const employeeData = await inquirer.prompt([
           {
             type: "input",
@@ -122,7 +127,8 @@ async function startApp() {
             })),
           },
         ]);
-        const employeeSql = "INSERT INTO employees (first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?)";
+        const employeeSql =
+          "INSERT INTO employees (first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?)";
         const employeeParams = [
           employeeData.employeeFirstName,
           employeeData.employeeLastName,
@@ -143,10 +149,20 @@ async function startApp() {
 
         switch (filterAnswers.filterOption) {
           case "View all employees":
-            await queryDB("SELECT * FROM employees");
+            const allEmployees = await queryDB(`
+    SELECT employee.id, employee.first_name, employee.last_name, role.title AS job_title, department.name AS department, role.salary, CONCAT(manager.first_name, ' ', manager.last_name) AS manager
+    FROM employees employee
+    LEFT JOIN roles role ON employee.role_id = role.id
+    LEFT JOIN departments department ON role.department_id =  department.id
+    LEFT JOIN employees manager ON employee.manager_id = manager.id
+  `);
+            console.table(allEmployees);
             break;
+
           case "Filter by manager":
-            const managerChoices = await queryDB("SELECT id, CONCAT(first_name, ' ', last_name) AS name FROM employees");
+            const managerChoices = await queryDB(
+              "SELECT id, CONCAT(first_name, ' ', last_name) AS name FROM employees"
+            );
             const managerData = await inquirer.prompt([
               {
                 type: "list",
@@ -158,12 +174,17 @@ async function startApp() {
                 })),
               },
             ]);
-            await queryDB("SELECT * FROM employees WHERE CONCAT(first_name, ' ', last_name) = ?", [managerData.managerFilter]);
+            await queryDB(
+              "SELECT * FROM employees WHERE CONCAT(first_name, ' ', last_name) = ?",
+              [managerData.managerFilter]
+            );
             break;
         }
         break;
       case "Update an employee role":
-        const employeeChoices = await queryDB("SELECT id, CONCAT(first_name, ' ', last_name) AS name FROM employees");
+        const employeeChoices = await queryDB(
+          "SELECT id, CONCAT(first_name, ' ', last_name) AS name FROM employees"
+        );
         const updatedEmployeeData = await inquirer.prompt([
           {
             type: "list",
@@ -181,7 +202,11 @@ async function startApp() {
           },
         ]);
 
-        const roleID = (await queryDB("SELECT id FROM roles WHERE title = ?", [updatedEmployeeData.newRole]))[0].id;
+        const roleID = (
+          await queryDB("SELECT id FROM roles WHERE title = ?", [
+            updatedEmployeeData.newRole,
+          ])
+        )[0].id;
 
         const updateSql = "UPDATE employees SET role_id = ? WHERE id = ?";
         const updateParams = [roleID, updatedEmployeeData.employeeToUpdate];
