@@ -156,7 +156,6 @@ async function startApp() {
     LEFT JOIN departments department ON role.department_id =  department.id
     LEFT JOIN employees manager ON employee.manager_id = manager.id
   `);
-            console.table(allEmployees);
             break;
 
           case "Filter by manager":
@@ -174,10 +173,26 @@ async function startApp() {
                 })),
               },
             ]);
-            await queryDB(
-              "SELECT * FROM employees WHERE CONCAT(first_name, ' ', last_name) = ?",
+            const filteredEmployees = await queryDB(
+              `
+            SELECT 
+              employee.id,
+              employee.first_name,
+              employee.last_name,
+              role.title AS job_title,
+              department.name AS department,
+              role.salary,
+              CONCAT(manager.first_name, ' ', manager.last_name) AS manager
+            FROM employees employee
+            LEFT JOIN roles role ON employee.role_id = role.id
+            LEFT JOIN departments department ON role.department_id = department.id
+            LEFT JOIN employees manager ON employee.manager_id = manager.id
+            WHERE CONCAT(manager.first_name, ' ', manager.last_name) = ?
+          `,
               [managerData.managerFilter]
             );
+
+            //console.table(filteredEmployees);
             break;
         }
         break;
