@@ -19,4 +19,4 @@ Click the link to view an example of the database.
     
 Click the link for a video walkthrough demonstration of the Employee Tracker project. 
 
-[Link to Video]()
+[Link to Video](https://app.screencastify.com/v3/watch/PdJe9CEbcEBOWcF33WxA)
